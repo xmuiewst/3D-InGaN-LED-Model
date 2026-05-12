@@ -4,6 +4,8 @@ This folder contains the reviewer-facing reproduction code and data for the 5 kV
 
 **Model-Constrained Nanoscale 3D Cathodoluminescence Reconstruction of InGaN LEDs via Coupled Electron–Photon Transport**
 
+Repository: <https://github.com/xmuiewst/3D-InGaN-LED-Model>
+
 ## Requirements
 
 Use MATLAB with the Image Processing Toolbox. This package has been smoke-tested with MATLAB R2025b.
@@ -113,7 +115,7 @@ run_3d_modeling(fullfile('output', 'activity_structure_package.mat'))
 
 The `results/` folder contains the static result data referenced in the manuscript.
 
-For GitHub distribution, this folder is intended to be provided as a Release asset named `results.zip`, because several static result files are too large for normal GitHub tracking. Download `results.zip` from the repository release page, then extract it into the repository root so the following paths exist:
+For GitHub distribution, this folder is provided as a Release asset named `results.zip`, because several static result files are too large for normal GitHub tracking. Download `results.zip` from the [v1.0.0 release](https://github.com/xmuiewst/3D-InGaN-LED-Model/releases/tag/v1.0.0), then extract it into the repository root so the following paths exist:
 
 | Folder | Content |
 | --- | --- |
@@ -131,6 +133,18 @@ For GitHub distribution, this folder is intended to be provided as a Release ass
 | `Table2_forward_ablation_metrics.csv` | Manuscript Table 2 M0-M3 ablation metrics |
 | `Table1_Table2.xlsx` | Workbook containing the two manuscript tables |
 
+Verify the downloaded archive with:
+
+```powershell
+Get-FileHash .\results.zip -Algorithm SHA256
+```
+
+Expected SHA256:
+
+```text
+C2C568FC76E8B752A0D69802E7F0817D2CB46351D98D750EC454F3C4C8E0CF0E
+```
+
 ## Citation
 
 If you use this code or the accompanying data, please cite:
@@ -141,4 +155,4 @@ The formal journal citation, DOI, and BibTeX entry should be added here after pu
 
 ## License
 
-Before public release, add a standard open-source license file named `LICENSE` at the repository root. For academic reproduction code, BSD-3-Clause or MIT are both common permissive choices. If the `results/` data are distributed separately through GitHub Releases, also state the data reuse terms in the release notes or a `DATA_LICENSE` file.
+This project is released under the MIT License. See the `LICENSE` file for details.
