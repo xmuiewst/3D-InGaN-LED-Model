@@ -1,0 +1,23 @@
+# MATLAB autosave and generated files
+*.asv
+*.m~
+*.mex*
+*.slxc
+*.mlappinstall
+*.mlx.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Generated reconstruction outputs
+output/
+
+# Static paper results are distributed as a GitHub Release asset
+results/
+results.zip
+
+# Temporary archives
+*.zip
+*.7z
+*.rar
