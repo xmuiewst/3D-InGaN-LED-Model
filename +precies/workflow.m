@@ -63,6 +63,10 @@ opts.params = struct( ...
     'gridPoints3D', 100, ...
     'barrierThick', 8, ...
     'wellThick', 5, ...
+    'prestrainedPeriods', 10, ...
+    'prestrainedThickLayerNm', 9, ...
+    'prestrainedThinLayerNm', 2, ...
+    'prestrainedTotalThicknessNm', 120, ...
     'elementaryCharge', 1.602e-19, ...
     'numElectrons', 100);
 end
@@ -218,10 +222,15 @@ barrierInComposition = clampValue(barrierInComposition, 0.01, max(0.02, wellInCo
 prestrainedInComposition = clampValue(invertInComposition(prestrainedComponent(2), defaultPrestrainedIn), 0.02, 0.18);
 eblInComposition = clampValue(invertInComposition(pTypeComponent(2), defaultEblIn), 0.05, 0.30);
 semipolarSpectrum = buildGaussianMixtureSpectrum(semipolarComponentsNm);
+prestrainedPeriods = getFieldOrDefault(params, 'prestrainedPeriods', 10);
+prestrainedThickLayerNm = getFieldOrDefault(params, 'prestrainedThickLayerNm', 9);
+prestrainedThinLayerNm = getFieldOrDefault(params, 'prestrainedThinLayerNm', 2);
+prestrainedTotalThicknessNm = getFieldOrDefault(params, 'prestrainedTotalThicknessNm', 120);
 profile = struct( ...
-    'profileVersion', 8, ...
+    'profileVersion', 9, ...
     'createdAt', char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
     'entryMode', 'wavelength', ...
+    'shortwaveEmitter', 'Prestrained', ...
     'sourceFile', getFieldOrDefault(experimentalData, 'sourceFile', ''), ...
     'sourceName', getFieldOrDefault(experimentalData, 'sourceName', 'Imported TIFF'), ...
     'roi', roi, ...
@@ -233,6 +242,10 @@ profile = struct( ...
     'eblInComposition', eblInComposition, ...
     'wellThick', params.wellThick, ...
     'barrierThick', params.barrierThick, ...
+    'prestrainedPeriods', prestrainedPeriods, ...
+    'prestrainedThickLayerNm', prestrainedThickLayerNm, ...
+    'prestrainedThinLayerNm', prestrainedThinLayerNm, ...
+    'prestrainedTotalThicknessNm', prestrainedTotalThicknessNm, ...
     'nGaNSpectrum', nGaNSpectrum, ...
     'gaNSpectrum', nGaNSpectrum, ...
     'prestrainedSpectrum', prestrainedSpectrum, ...
@@ -2813,12 +2826,20 @@ function assignments = assignComponentsToEmissionFamilies(componentsNm, familyDe
     wellRef = dominantComponentFromGroup(familyDefaults.well);
     pTypeRef = dominantComponentFromGroup(familyDefaults.pType);
 
-    nGaNCandidates = find(componentsNm(:, 2) >= 372 & componentsNm(:, 2) <= 397);
-    if isempty(nGaNCandidates)
-        nGaNIdx = selectClosestUnassignedComponent(componentsNm, assignedMask, nGaNRef(2), [372, 397]);
+    prestrainedCandidates = find(componentsNm(:, 2) >= 376 & componentsNm(:, 2) <= 405);
+    if isempty(prestrainedCandidates)
+        prestrainedIdx = selectClosestUnassignedComponent(componentsNm, assignedMask, prestrainedRef(2), [376, 455]);
     else
-        [~, strongestIdx] = max(componentsNm(nGaNCandidates, 1));
-        nGaNIdx = nGaNCandidates(strongestIdx);
+        [~, strongestIdx] = max(componentsNm(prestrainedCandidates, 1));
+        prestrainedIdx = prestrainedCandidates(strongestIdx);
+    end
+    if ~isempty(prestrainedIdx)
+        assignedMask(prestrainedIdx) = true;
+    end
+
+    nGaNIdx = selectClosestUnassignedComponent(componentsNm, assignedMask, nGaNRef(2), [360, 384]);
+    if isempty(nGaNIdx)
+        nGaNIdx = selectClosestUnassignedComponent(componentsNm, assignedMask, nGaNRef(2), [360, 397]);
     end
     if ~isempty(nGaNIdx)
         assignedMask(nGaNIdx) = true;
@@ -2854,8 +2875,10 @@ function assignments = assignComponentsToEmissionFamilies(componentsNm, familyDe
         assignedMask(semipolarIdx) = true;
     end
 
-    prestrainedIdx = selectClosestUnassignedComponent(componentsNm, assignedMask, prestrainedRef(2), [398, 455]);
-    if ~isempty(prestrainedIdx)
+    if isempty(prestrainedIdx)
+        prestrainedIdx = selectClosestUnassignedComponent(componentsNm, assignedMask, prestrainedRef(2), [398, 455]);
+    end
+    if ~isempty(prestrainedIdx) && ~assignedMask(prestrainedIdx)
         assignedMask(prestrainedIdx) = true;
     end
 
@@ -2969,9 +2992,9 @@ end
 
 function prestrainedComponentsNm = derivePrestrainedComponents(nGaNComponentsNm, barrierRef)
     baseComponent = dominantComponentFromGroup(nGaNComponentsNm);
-    upperBoundNm = max(405, barrierRef(2) - 18);
-    centerNm = min(upperBoundNm, max(392, baseComponent(2) + 24));
-    widthNm = max(12, 1.8 * baseComponent(3));
+    upperBoundNm = max(398, barrierRef(2) - 28);
+    centerNm = min(upperBoundNm, max(388, baseComponent(2) + 14));
+    widthNm = max(10, 1.5 * baseComponent(3));
     etaValue = getEtaFromComponent(baseComponent);
     prestrainedComponentsNm = normalizeComponentWeights([1, centerNm, widthNm, etaValue]);
 end
@@ -3211,8 +3234,9 @@ function refinement = buildLocalRefinement(experimentalData, simulationData, com
     semipolarGainMap = ones(rows, cols);
     pTypeGainMap = ones(rows, cols);
 
-    nGaNBand = buildPeakBand(getFieldOrDefault(profile, 'shortwavePeakNm', getFieldOrDefault(profile, 'nGaNPeakNm', 390)), 11, [376, 396]);
-    prestrainedBand = buildPeakBand(getFieldOrDefault(profile, 'shoulderPeakNm', getFieldOrDefault(profile, 'prestrainedPeakNm', 413)), 18, [398, 432]);
+    nGaNBand = buildPeakBand(getFieldOrDefault(profile, 'nGaNPeakNm', 376), 8, [360, 386]);
+    prestrainedBand = buildPeakBand(getFieldOrDefault(profile, 'shortwavePeakNm', ...
+        getFieldOrDefault(profile, 'prestrainedPeakNm', 390)), 11, [376, 405]);
     barrierBand = buildPeakBand(getFieldOrDefault(profile, 'barrierPeakNm', 459), 18, [442, 475]);
     semipolarBand = buildPeakBand(getFieldOrDefault(profile, 'semipolarPeakNm', 510), 24, [470, 545]);
     wellBand = buildPeakBand(getFieldOrDefault(profile, 'wellPeakNm', getFieldOrDefault(profile, 'redPeakNm', 540)), 28, [490, 650]);
@@ -3269,7 +3293,9 @@ function localField = buildExperimentalLocalParameterField(experimentalData, com
     globalBarrierIn = profile.barrierInComposition;
     globalSemipolarIn = invertInComposition(getFieldOrDefault(profile, 'semipolarPeakNm', profile.barrierPeakNm), 0.85 * globalWellIn);
 
-    shortwaveBand = buildPeakBand(getFieldOrDefault(profile, 'shortwavePeakNm', getFieldOrDefault(profile, 'nGaNPeakNm', 390)), 11, [376, 396]);
+    nGaNBand = buildPeakBand(getFieldOrDefault(profile, 'nGaNPeakNm', 376), 8, [360, 386]);
+    shortwaveBand = buildPeakBand(getFieldOrDefault(profile, 'shortwavePeakNm', ...
+        getFieldOrDefault(profile, 'prestrainedPeakNm', 390)), 11, [376, 405]);
     shoulderBand = buildPeakBand(getFieldOrDefault(profile, 'shoulderPeakNm', getFieldOrDefault(profile, 'prestrainedPeakNm', 413)), 18, [398, 432]);
     barrierBand = buildPeakBand(getFieldOrDefault(profile, 'barrierPeakNm', 459), 18, [442, 475]);
     semipolarBand = buildPeakBand(getFieldOrDefault(profile, 'semipolarPeakNm', 510), 24, [470, 545]);
@@ -3300,14 +3326,14 @@ function localField = buildExperimentalLocalParameterField(experimentalData, com
             end
 
             totalIntensityMap(rowIdx, colIdx) = trapz(commonAxisNm, intensitySpectrum);
-            nGaNAreaMap(rowIdx, colIdx) = integrateBandArea(commonAxisNm, normalizedSpectrum, shortwaveBand);
+            nGaNAreaMap(rowIdx, colIdx) = integrateBandArea(commonAxisNm, normalizedSpectrum, nGaNBand);
             prestrainedAreaMap(rowIdx, colIdx) = integrateBandArea(commonAxisNm, normalizedSpectrum, shoulderBand);
             barrierAreaMap(rowIdx, colIdx) = integrateBandArea(commonAxisNm, normalizedSpectrum, barrierBand);
             semipolarAreaMap(rowIdx, colIdx) = integrateBandArea(commonAxisNm, normalizedSpectrum, semipolarBand);
             wellAreaMap(rowIdx, colIdx) = integrateBandArea(commonAxisNm, normalizedSpectrum, wellBand);
             pTypeAreaMap(rowIdx, colIdx) = integrateBandArea(commonAxisNm, normalizedSpectrum, pTypeBand);
-            nGaNPeakMap_nm(rowIdx, colIdx) = computeBandCentroid(commonAxisNm, normalizedSpectrum, shortwaveBand, getFieldOrDefault(profile, 'shortwavePeakNm', getFieldOrDefault(profile, 'nGaNPeakNm', 390)));
-            prestrainedPeakMap_nm(rowIdx, colIdx) = computeBandCentroid(commonAxisNm, normalizedSpectrum, shoulderBand, getFieldOrDefault(profile, 'shoulderPeakNm', getFieldOrDefault(profile, 'prestrainedPeakNm', 413)));
+            nGaNPeakMap_nm(rowIdx, colIdx) = computeBandCentroid(commonAxisNm, normalizedSpectrum, nGaNBand, getFieldOrDefault(profile, 'nGaNPeakNm', 376));
+            prestrainedPeakMap_nm(rowIdx, colIdx) = computeBandCentroid(commonAxisNm, normalizedSpectrum, shortwaveBand, getFieldOrDefault(profile, 'shortwavePeakNm', getFieldOrDefault(profile, 'prestrainedPeakNm', 390)));
             barrierPeakMap_nm(rowIdx, colIdx) = computeBandCentroid(commonAxisNm, normalizedSpectrum, barrierBand, getFieldOrDefault(profile, 'barrierPeakNm', 405));
             semipolarPeakMap_nm(rowIdx, colIdx) = computeBandCentroid(commonAxisNm, normalizedSpectrum, semipolarBand, getFieldOrDefault(profile, 'semipolarPeakNm', 510));
             wellPeakMap_nm(rowIdx, colIdx) = computeBandCentroid(commonAxisNm, normalizedSpectrum, wellBand, getFieldOrDefault(profile, 'wellPeakNm', getFieldOrDefault(profile, 'redPeakNm', 540)));
@@ -3315,10 +3341,12 @@ function localField = buildExperimentalLocalParameterField(experimentalData, com
         end
     end
 
-    shortwaveAreaMap = nGaNAreaMap;
+    trueNGaNAreaMap = nGaNAreaMap;
+    shortwaveAreaMap = pTypeAreaMap;
+    rawPrestrainedShortwaveAreaMap = shortwaveAreaMap;
     rawShoulderAreaMap = prestrainedAreaMap;
     shoulderAreaMap = max(rawShoulderAreaMap - 0.28 * shortwaveAreaMap - 0.035 * wellAreaMap, 0);
-    prestrainedAreaMap = shoulderAreaMap;
+    prestrainedAreaMap = rawPrestrainedShortwaveAreaMap;
     [vpitInfluenceMap, vpitCoreMask, vpitRimMask, regionCategoryMap] = ...
         buildVpitRegionMaps(experimentalData, rows, cols, shortwaveAreaMap, shoulderAreaMap, wellAreaMap);
     shortMainRatioMap = shortwaveAreaMap ./ max(wellAreaMap, eps);
@@ -3327,7 +3355,8 @@ function localField = buildExperimentalLocalParameterField(experimentalData, com
         0.34 + 0.30 * vpitInfluenceMap + 0.10 * normalizeFiniteMap(shoulderMainRatioMap) - ...
         0.08 * normalizeFiniteMap(wellAreaMap), 0.24, 0.72);
     pTypeAreaMap = shortwaveAreaMap .* pTypeShareMap;
-    nGaNAreaMap = shortwaveAreaMap .* (1 - pTypeShareMap);
+    prestrainedAreaMap = shortwaveAreaMap .* (1 - pTypeShareMap) + shoulderAreaMap;
+    nGaNAreaMap = trueNGaNAreaMap;
     pTypeReferencePeak_nm = getFieldOrDefault(profile, 'pTypePeakNm', 388.5);
     pTypePeakMap_nm = min(nGaNPeakMap_nm, pTypeReferencePeak_nm);
 
@@ -3411,6 +3440,8 @@ function localField = buildExperimentalLocalParameterField(experimentalData, com
         'wellAreaMap', wellAreaMap, ...
         'semipolarAreaMap', semipolarAreaMap, ...
         'pTypeAreaMap', pTypeAreaMap, ...
+        'trueNGaNAreaMap', trueNGaNAreaMap, ...
+        'rawPrestrainedShortwaveAreaMap', rawPrestrainedShortwaveAreaMap, ...
         'shortwaveAreaMap', shortwaveAreaMap, ...
         'shoulderAreaMap', shoulderAreaMap, ...
         'rawShoulderAreaMap', rawShoulderAreaMap, ...
@@ -3443,8 +3474,8 @@ function localField = buildExperimentalLocalParameterField(experimentalData, com
         'wellGainMap', wellGainMap, ...
         'semipolarGainMap', semipolarGainMap, ...
         'pTypeGainMap', pTypeGainMap, ...
-        'globalNGaNPeakNm', getFieldOrDefault(profile, 'shortwavePeakNm', getFieldOrDefault(profile, 'nGaNPeakNm', getFieldOrDefault(profile, 'gaNPeakNm', 390))), ...
-        'globalPrestrainedPeakNm', getFieldOrDefault(profile, 'shoulderPeakNm', getFieldOrDefault(profile, 'prestrainedPeakNm', 413)), ...
+        'globalNGaNPeakNm', getFieldOrDefault(profile, 'nGaNPeakNm', getFieldOrDefault(profile, 'gaNPeakNm', 376)), ...
+        'globalPrestrainedPeakNm', getFieldOrDefault(profile, 'shortwavePeakNm', getFieldOrDefault(profile, 'prestrainedPeakNm', 390)), ...
         'globalWellIn', globalWellIn, ...
         'globalBarrierIn', globalBarrierIn, ...
         'globalSemipolarIn', globalSemipolarIn, ...

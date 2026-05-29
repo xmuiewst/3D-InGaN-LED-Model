@@ -232,6 +232,10 @@ function opts = normalizeForwardSimulationOptions(options)
         'gridPoints3D', 24, ...
         'barrierThick', 8, ...
         'wellThick', 5, ...
+        'prestrainedPeriods', 10, ...
+        'prestrainedThickLayerNm', 9, ...
+        'prestrainedThinLayerNm', 2, ...
+        'prestrainedTotalThicknessNm', 120, ...
         'elementaryCharge', 1.602e-19, ...
         'numElectrons', 16);
 
@@ -263,7 +267,9 @@ function opts = normalizeForwardSimulationOptions(options)
     opts.progressEveryPixels = max(0, round(double(getOptionOrDefault(options, {'progressEveryPixels'}, 0))));
 
     numericFields = {'numRays', 'electronEnergy', 'beamCurrent', 'depth_step', 'mqw_pairs', 'mqw_barriers', ...
-        'scanX', 'scanY', 'totalPixels', 'barrierThick', 'wellThick', 'numElectrons'};
+        'scanX', 'scanY', 'totalPixels', 'barrierThick', 'wellThick', ...
+        'prestrainedPeriods', 'prestrainedThickLayerNm', 'prestrainedThinLayerNm', ...
+        'prestrainedTotalThicknessNm', 'numElectrons'};
     for fieldIdx = 1:numel(numericFields)
         fieldName = numericFields{fieldIdx};
         opts.params.(fieldName) = double(opts.params.(fieldName));
@@ -271,6 +277,10 @@ function opts = normalizeForwardSimulationOptions(options)
     opts.params.numRays = max(4, round(opts.params.numRays));
     opts.params.mqw_pairs = max(1, round(opts.params.mqw_pairs));
     opts.params.mqw_barriers = max(0, round(opts.params.mqw_barriers));
+    opts.params.prestrainedPeriods = max(1, round(opts.params.prestrainedPeriods));
+    opts.params.prestrainedThickLayerNm = max(0.1, opts.params.prestrainedThickLayerNm);
+    opts.params.prestrainedThinLayerNm = max(0.1, opts.params.prestrainedThinLayerNm);
+    opts.params.prestrainedTotalThicknessNm = max(0.2, opts.params.prestrainedTotalThicknessNm);
     opts.params.totalPixels = max(1, round(opts.params.totalPixels));
     opts.params.numElectrons = max(1, round(opts.params.numElectrons));
     opts.params.depth_step = max(1, opts.params.depth_step);
@@ -312,7 +322,11 @@ function resultsTable = electronDepthSweep(options)
         'mqw_pairs', opts.mqwPairs, ...
         'mqw_barriers', opts.mqwBarriers, ...
         'barrierThick', opts.barrierThick, ...
-        'wellThick', opts.wellThick);
+        'wellThick', opts.wellThick, ...
+        'prestrainedPeriods', opts.prestrainedPeriods, ...
+        'prestrainedThickLayerNm', opts.prestrainedThickLayerNm, ...
+        'prestrainedThinLayerNm', opts.prestrainedThinLayerNm, ...
+        'prestrainedTotalThicknessNm', opts.prestrainedTotalThicknessNm);
     entryConfig = precies.config(opts.entryMode, params);
     layer_params = entryConfig.layerParams;
 
@@ -381,6 +395,10 @@ function opts = normalizeElectronDepthOptions(options)
     opts.mqwBarriers = getOptionOrDefault(options, {'mqwBarriers', 'mqw_barriers', 'barrierCount'}, opts.mqwPairs - 1);
     opts.barrierThick = getOptionOrDefault(options, {'barrierThick', 'barrier_nm'}, 8);
     opts.wellThick = getOptionOrDefault(options, {'wellThick', 'well_nm'}, 5);
+    opts.prestrainedPeriods = getOptionOrDefault(options, {'prestrainedPeriods', 'prelayerPeriods'}, 10);
+    opts.prestrainedThickLayerNm = getOptionOrDefault(options, {'prestrainedThickLayerNm', 'prelayerThickNm'}, 9);
+    opts.prestrainedThinLayerNm = getOptionOrDefault(options, {'prestrainedThinLayerNm', 'prelayerThinNm'}, 2);
+    opts.prestrainedTotalThicknessNm = getOptionOrDefault(options, {'prestrainedTotalThicknessNm', 'prelayerTotalThicknessNm'}, 120);
     opts.startPositionNm = getOptionOrDefault(options, {'startPositionNm', 'startPosition_nm'}, [0, 0, 0]);
     opts.rngSeed = getOptionOrDefault(options, {'rngSeed', 'seed'}, []);
 
@@ -397,6 +415,10 @@ function opts = normalizeElectronDepthOptions(options)
     opts.mqwBarriers = max(0, round(double(opts.mqwBarriers)));
     opts.barrierThick = double(opts.barrierThick);
     opts.wellThick = double(opts.wellThick);
+    opts.prestrainedPeriods = max(1, round(double(opts.prestrainedPeriods)));
+    opts.prestrainedThickLayerNm = max(0.1, double(opts.prestrainedThickLayerNm));
+    opts.prestrainedThinLayerNm = max(0.1, double(opts.prestrainedThinLayerNm));
+    opts.prestrainedTotalThicknessNm = max(0.2, double(opts.prestrainedTotalThicknessNm));
     opts.startPositionNm = double(opts.startPositionNm);
 
     if any(~isfinite(opts.voltagesKeV)) || isempty(opts.voltagesKeV)
@@ -440,7 +462,11 @@ function [layers, layerBoundaries] = Layers(layer_params,params)
 mqw_pairs = max(1, round(params.mqw_pairs));
 mqw_barriers = resolveMqwBarrierCount(params, mqw_pairs);
 mqwTemplateCount = nnz(strcmp(layer_params(:, 1), 'MQW-Barrier'));
-maxLayerRows = size(layer_params, 1) + mqwTemplateCount * max(0, mqw_pairs + mqw_barriers);
+prestrainedPeriods = resolvePrestrainedPeriodCount(params);
+prestrainedTemplateCount = nnz(strcmp(layer_params(:, 1), 'Prestrained'));
+maxLayerRows = size(layer_params, 1) + ...
+    mqwTemplateCount * max(0, mqw_pairs + mqw_barriers) + ...
+    prestrainedTemplateCount * max(0, 2 * prestrainedPeriods - 1);
 layers = cell(maxLayerRows, size(layer_params, 2));
 layerWriteIdx = 0;
 skip_mqw_well = false;
@@ -450,7 +476,13 @@ for i = 1:size(layer_params,1)
         continue; 
     end
     
-    if strcmp(layer_params{i,1}, 'MQW-Barrier')
+    if strcmp(layer_params{i,1}, 'Prestrained') && prestrainedPeriods > 1
+        preRows = buildPrestrainedSuperlatticeRows(layer_params(i,:), params, prestrainedPeriods);
+        for preIdx = 1:size(preRows, 1)
+            layerWriteIdx = layerWriteIdx + 1;
+            layers(layerWriteIdx,:) = preRows(preIdx,:);
+        end
+    elseif strcmp(layer_params{i,1}, 'MQW-Barrier')
         barrierRow = layer_params(i,:);
         wellRow = layer_params(i + 1,:);
         if mqw_barriers >= mqw_pairs
@@ -512,6 +544,84 @@ function mqw_barriers = resolveMqwBarrierCount(params, mqw_pairs)
         mqw_barriers = mqw_pairs - 1;
     end
     mqw_barriers = max(0, round(double(mqw_barriers)));
+end
+
+function prestrainedPeriods = resolvePrestrainedPeriodCount(params)
+    prestrainedPeriods = resolvePrestrainedOption(params, ...
+        {'prestrainedPeriods', 'prelayerPeriods', 'prePeriods'}, 1);
+    prestrainedPeriods = max(1, round(double(prestrainedPeriods)));
+end
+
+function preRows = buildPrestrainedSuperlatticeRows(baseRow, params, prestrainedPeriods)
+    thickLayerNm = resolvePrestrainedOption(params, ...
+        {'prestrainedThickLayerNm', 'prestrainedThickNm', 'prelayerThickNm'}, 9);
+    thinLayerNm = resolvePrestrainedOption(params, ...
+        {'prestrainedThinLayerNm', 'prestrainedThinNm', 'prelayerThinNm'}, 2);
+    totalThicknessNm = resolvePrestrainedOption(params, ...
+        {'prestrainedTotalThicknessNm', 'prelayerTotalThicknessNm'}, ...
+        prestrainedPeriods * (thickLayerNm + thinLayerNm));
+
+    thickLayerNm = max(0.1, double(thickLayerNm));
+    thinLayerNm = max(0.1, double(thinLayerNm));
+    totalThicknessNm = max(0.2, double(totalThicknessNm));
+    scaleFactor = totalThicknessNm / max(prestrainedPeriods * (thickLayerNm + thinLayerNm), eps);
+    thickLayerNm = thickLayerNm * scaleFactor;
+    thinLayerNm = thinLayerNm * scaleFactor;
+
+    baseIn = double(baseRow{1, 2});
+    thickIn = resolvePrestrainedOption(params, ...
+        {'prestrainedThickInComposition', 'prelayerThickInComposition'}, ...
+        max(0.01, min(baseIn, 0.85 * baseIn)));
+    thinInDefault = baseIn;
+    if thinLayerNm > 0
+        thinInDefault = (baseIn * (thickLayerNm + thinLayerNm) - thickIn * thickLayerNm) / thinLayerNm;
+    end
+    thinInDefault = max(baseIn + 0.005, thinInDefault);
+    thinIn = resolvePrestrainedOption(params, ...
+        {'prestrainedThinInComposition', 'prelayerThinInComposition'}, thinInDefault);
+    thickIn = clamp(double(thickIn), 0, 0.30);
+    thinIn = clamp(double(thinIn), 0, 0.30);
+
+    preRows = cell(2 * prestrainedPeriods, size(baseRow, 2));
+    for periodIdx = 1:prestrainedPeriods
+        thickRow = baseRow;
+        thickRow{1, 1} = sprintf('Prestrained-Thick-%02d', periodIdx);
+        thickRow{1, 2} = thickIn;
+        thickRow{1, 3} = thickLayerNm;
+        thinRow = baseRow;
+        thinRow{1, 1} = sprintf('Prestrained-Thin-%02d', periodIdx);
+        thinRow{1, 2} = thinIn;
+        thinRow{1, 3} = thinLayerNm;
+
+        preRows(2 * periodIdx - 1, :) = thickRow;
+        preRows(2 * periodIdx, :) = thinRow;
+    end
+end
+
+function value = resolvePrestrainedOption(params, fieldNames, defaultValue)
+    value = defaultValue;
+    if ~isstruct(params)
+        return;
+    end
+
+    profile = getFieldOrDefault(params, 'calibrationProfile', struct());
+    if isstruct(profile)
+        for fieldIdx = 1:numel(fieldNames)
+            fieldName = fieldNames{fieldIdx};
+            if isfield(profile, fieldName) && ~isempty(profile.(fieldName))
+                value = profile.(fieldName);
+                return;
+            end
+        end
+    end
+
+    for fieldIdx = 1:numel(fieldNames)
+        fieldName = fieldNames{fieldIdx};
+        if isfield(params, fieldName) && ~isempty(params.(fieldName))
+            value = params.(fieldName);
+            return;
+        end
+    end
 end
 
 function plotRefractiveIndex(material_data)
@@ -2478,6 +2588,10 @@ end
 function spectrumModel = resolveLayerGroupSpectrum(layers, targetLayerName, fallbackSpectrum)
     rowIdx = find(strcmp(layers(:, 1), targetLayerName), 1, 'first');
     if isempty(rowIdx)
+        layerNames = string(layers(:, 1));
+        rowIdx = find(contains(layerNames, string(targetLayerName), 'IgnoreCase', true), 1, 'first');
+    end
+    if isempty(rowIdx)
         spectrumModel = fallbackSpectrum;
     else
         spectrumModel = layers{rowIdx, 8};
@@ -2511,7 +2625,7 @@ function pixelParams = resolvePixelParameterContext(params, pixelIndex)
         'semipolarSourceGain', 1, ...
         'pTypeSourceGain', 1, ...
         'targetFamilyFractions', normalizeFamilyFractionsLocal([1, 1, 1, 1, 1, 1]), ...
-        'targetPeakNmByFamily', [391; 420; 480; 540; 510; 388], ...
+        'targetPeakNmByFamily', [376; 391; 480; 540; 510; 388], ...
         'isVpitLikePixel', false, ...
         'vpitSuppressionStrength', 0, ...
         'vpitLongwaveCompetition', 0, ...
@@ -2666,7 +2780,7 @@ function fractions = normalizeFamilyFractionsLocal(rawFractions)
     fractions = double(rawFractions(:));
     fractions(~isfinite(fractions) | fractions < 0) = 0;
     if ~any(fractions > 0)
-        fractions = [0.16; 0.10; 0.14; 0.36; 0.16; 0.08];
+        fractions = [0.04; 0.22; 0.14; 0.36; 0.16; 0.08];
     end
     fractions = fractions / sum(fractions);
 end
@@ -2789,7 +2903,7 @@ function sourceWeights = applyPixelOneStepBandMatching(sourceWeights, sourceData
     gainByType = max(0.45, min(1.85, gainByType));
 
     if getFieldOrDefault(localContext, 'isVpitLikePixel', false)
-        shortwaveIdx = [1, 6];
+        shortwaveIdx = [1, 2, 6];
         currentShortwave = sum(currentFractions(shortwaveIdx));
         targetShortwave = sum(targetFractions(shortwaveIdx));
         if currentShortwave > targetShortwave + 0.05
@@ -2872,7 +2986,7 @@ function sourceWeights = applySampledBandMatching(sourceWeights, wavelengths_m, 
     gainByBand = max(0.18, min(2.40, gainByBand));
 
     if getFieldOrDefault(localContext, 'isVpitLikePixel', false)
-        shortwaveIdx = [1, 6];
+        shortwaveIdx = [1, 2, 6];
         currentShortwave = sum(currentFractions(shortwaveIdx));
         targetShortwave = sum(targetFractions(shortwaveIdx));
         if currentShortwave > targetShortwave + 0.05
@@ -2911,7 +3025,7 @@ end
 
 function bandIdx = assignWavelengthBands(wavelengths_nm, targetPeaks_nm)
     targetPeaks_nm = double(targetPeaks_nm(:));
-    defaultPeaks_nm = [391; 420; 480; 540; 510; 388];
+    defaultPeaks_nm = [376; 391; 480; 540; 510; 388];
     invalidMask = ~isfinite(targetPeaks_nm) | targetPeaks_nm <= 0;
     targetPeaks_nm(invalidMask) = defaultPeaks_nm(invalidMask);
     [sortedPeaks, sortOrder] = sort(targetPeaks_nm, 'ascend');
@@ -2948,7 +3062,7 @@ function sourceWeights = applyPixelIntensityField(sourceWeights, sourceData, par
     wellMask = sourceTypeCodes == 4;
     semipolarMask = sourceTypeCodes == 5;
     barrierMask = sourceTypeCodes == 3;
-    upperMask = sourceTypeCodes == 1 | sourceTypeCodes == 6;
+    upperMask = sourceTypeCodes == 1 | sourceTypeCodes == 2 | sourceTypeCodes == 6;
 
     if any(wellMask)
         wellCollectionScale = clamp( ...
@@ -2999,7 +3113,7 @@ function qeValue = resolveLayerEmissionQuantumYield(layerIdx, layers, sourceRow,
             qeValue = qeValue * clamp(shortwaveIqeRatio, 0.10, 5.0);
         case 2
             qeValue = qeValue * sqrt(clamp(shortwaveIqeRatio, 0.10, 2.25));
-            qeValue = min(qeValue, 0.18 * wellQeReference);
+            qeValue = min(qeValue, 4.0 * wellQeReference);
         case 3
             qeValue = qeValue * sqrt(clamp(shortwaveIqeRatio, 0.10, 5.0));
             qeValue = min(qeValue, 0.45 * wellQeReference);
@@ -4312,9 +4426,10 @@ end
 
 function [familyCenters_nm, familyWidths_nm] = getCalibrationProtectedEmissionWindows(profile, params)
     familyCenters_nm = [
-        getFieldOrDefault(profile, 'nGaNPeakNm', getFieldOrDefault(profile, 'gaNPeakNm', 390));
+        getFieldOrDefault(profile, 'nGaNPeakNm', getFieldOrDefault(profile, 'gaNPeakNm', 376));
         getFieldOrDefault(profile, 'pTypePeakNm', 388);
-        getFieldOrDefault(profile, 'prestrainedPeakNm', 420);
+        getFieldOrDefault(profile, 'shortwavePeakNm', ...
+        getFieldOrDefault(profile, 'prestrainedPeakNm', 390));
         getFieldOrDefault(profile, 'barrierPeakNm', getFieldOrDefault(profile, 'bluePeakNm', 480));
         getFieldOrDefault(profile, 'semipolarPeakNm', 510);
         getFieldOrDefault(profile, 'wellPeakNm', getFieldOrDefault(profile, 'redPeakNm', 540))];

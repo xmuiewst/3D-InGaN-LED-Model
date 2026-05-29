@@ -36,9 +36,19 @@ function layerParams = buildLayerParams(~, params)
         getFieldOrDefault(params, 'barrierThick', 8));
     wellThick = getProfileOrDefault(calibrationProfile, 'wellThick', ...
         getFieldOrDefault(params, 'wellThick', 5));
+    prestrainedPeriods = getProfileOrDefault(calibrationProfile, 'prestrainedPeriods', ...
+        getFieldOrDefault(params, 'prestrainedPeriods', 10));
+    prestrainedThickLayerNm = getProfileOrDefault(calibrationProfile, 'prestrainedThickLayerNm', ...
+        getFieldOrDefault(params, 'prestrainedThickLayerNm', 9));
+    prestrainedThinLayerNm = getProfileOrDefault(calibrationProfile, 'prestrainedThinLayerNm', ...
+        getFieldOrDefault(params, 'prestrainedThinLayerNm', 2));
+    prestrainedTotalThicknessNm = getProfileOrDefault(calibrationProfile, 'prestrainedTotalThicknessNm', ...
+        getFieldOrDefault(params, 'prestrainedTotalThicknessNm', 120));
 
-    nGaNSpectrum = [684, 390.90e-9, 10.00e-9, 15, 376.71e-9, 3.74e-9];
-    prestrainedSpectrum = [12, 414.0e-9, 34.0e-9, 4, 430.0e-9, 45.0e-9];
+    nGaNSpectrum = [15, 376.71e-9, 3.74e-9, 8, 365.0e-9, 6.0e-9];
+    prestrainedSpectrum = [684, 390.90e-9, 10.00e-9, ...
+        30, 414.0e-9, 34.0e-9, ...
+        10, 430.0e-9, 45.0e-9];
     barrierSpectrum = [42, 478.0e-9, 28.0e-9, 24, 503.0e-9, 30.0e-9];
     wellSpectrum = [76, 514.0e-9, 28.0e-9, 36, 540.0e-9, 24.0e-9];
     defaultPTypeSpectrum = [72, 388.5e-9, 11.0e-9, 22, 398.0e-9, 16.0e-9];
@@ -52,15 +62,19 @@ function layerParams = buildLayerParams(~, params)
     pTypeSpectrum = getProfileOrDefault(calibrationProfile, 'pTypeSpectrum', pTypeSpectrum);
     pTypeSpectrum = enforcePTypeNearBandEdgeSpectrum(pTypeSpectrum, defaultPTypeSpectrum);
 
-    prestrainedIn = getProfileOrDefault(calibrationProfile, 'prestrainedInComposition', 0.0530);
+    prestrainedIn = getProfileOrDefault(calibrationProfile, 'prestrainedInComposition', 0.0550);
     barrierIn = getProfileOrDefault(calibrationProfile, 'barrierInComposition', 0.1458);
     wellIn = getProfileOrDefault(calibrationProfile, 'wellInComposition', 0.6647);
     eblIn = getProfileOrDefault(calibrationProfile, 'eblInComposition', 0.2130);
+    prestrainedQuantumYield = getProfileOrDefault(calibrationProfile, 'prestrainedQuantumYield', ...
+        getFieldOrDefault(params, 'prestrainedQuantumYield', 2.60));
+    nGaNQuantumYield = getProfileOrDefault(calibrationProfile, 'nGaNQuantumYield', ...
+        getFieldOrDefault(params, 'nGaNQuantumYield', 0.30));
 
     layerParams = {
         'Substrate',   0.0000, 10,           'none',   [], [], [], [0, 0, 0, 0, 0, 0], 0.4083
-        'n-GaN',       0.0000, 2000,         'n-type', [], [], [], nGaNSpectrum,         3
-        'Prestrained', prestrainedIn, 30,           'none',   [], [], [], prestrainedSpectrum, 0.08
+        'n-GaN',       0.0000, 2000,         'n-type', [], [], [], nGaNSpectrum,         nGaNQuantumYield
+        'Prestrained', prestrainedIn, prestrainedTotalThicknessNm, 'none', [], [], [], prestrainedSpectrum, prestrainedQuantumYield
         'MQW-Barrier', barrierIn, barrierThick, 'none',   [], [], [], barrierSpectrum,      0.18
         'MQW-Well',    wellIn, wellThick,    'none',   [], [], [], wellSpectrum,         0.72
         'p-EBL',       eblIn, 0,            'p-type', [], [], [], pTypeSpectrum,        0.16

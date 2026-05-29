@@ -58,7 +58,7 @@ The workflow automatically:
 1. Finds `data/5KV-Example.tif`.
 2. Uses the full TIFF pixel grid as the ROI.
 3. Uses 5 kV electron energy.
-4. Simulates every selected pixel with the GUI-default parameters: 0.3 s integration time, 1000 rays, 100 pA beam current, 100 nm depth step, 10 MQW wells, 8 nm barriers, and 5 nm wells.
+4. Simulates every selected pixel with the GUI-default parameters: 0.3 s integration time, 1000 rays, 100 pA beam current, 100 nm depth step, a 10-period InGaN Prestrained superlattice near 120 nm total thickness, 10 MQW wells, 8 nm barriers, and 5 nm wells.
 5. Prints simulation progress as completed pixels over total pixels.
 6. Saves simulated mapping TIFF files and the reconstruction metrics.
 7. Exports `output/activity_structure_package.mat`.
