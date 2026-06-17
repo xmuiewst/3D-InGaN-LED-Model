@@ -66,15 +66,15 @@ The workflow automatically:
 
 The main outputs are written to `output/`:
 
-| File | Content |
-| --- | --- |
-| `5KV_simulation_mapping.tif` | Spectral TIFF stack for the simulated mapping |
-| `5KV_simulation_mapping_integrated.tif` | Band-integrated simulated mapping |
-| `5KV_metrics.csv` | NCC, nRMSE, peak shift, FWHM shift, and intensity-ratio metrics |
-| `Table1_validation_metrics.csv` | Table 1-style validation metrics for the 5 kV example |
-| `activity_structure_package.mat` | Activity-Structure package equivalent to the ActStruct MAT export |
-| `5KV_reconstruction_result.mat` | Full reproduction result bundle |
-| `Table2_forward_ablation_metrics.csv` | Created only if forward ablation is run |
+| File                                    | Content                                                           |
+| --------------------------------------- | ----------------------------------------------------------------- |
+| `5KV_simulation_mapping.tif`            | Spectral TIFF stack for the simulated mapping                     |
+| `5KV_simulation_mapping_integrated.tif` | Band-integrated simulated mapping                                 |
+| `5KV_metrics.csv`                       | NCC, nRMSE, peak shift, FWHM shift, and intensity-ratio metrics   |
+| `Table1_validation_metrics.csv`         | Table 1-style validation metrics for the 5 kV example             |
+| `activity_structure_package.mat`        | Activity-Structure package equivalent to the ActStruct MAT export |
+| `5KV_reconstruction_result.mat`         | Full reproduction result bundle                                   |
+| `Table2_forward_ablation_metrics.csv`   | Created only if forward ablation is run                           |
 
 For a non-interactive run without the final ablation prompt:
 
@@ -102,20 +102,20 @@ The `results/` folder contains the static result data referenced in the manuscri
 
 For GitHub distribution, this folder is provided as a Release asset named `results.zip`, because several static result files are too large for normal GitHub tracking. Download `results.zip` from the [Initial open-source releases](https://github.com/xmuiewst/3D-InGaN-LED-Model/releases/tag/v1.0.0), then extract it into the repository root so the following paths exist:
 
-| Folder | Content |
-| --- | --- |
-| `results/Fig7` | Experimental/simulated TIFF data and Fig. 7 comparison outputs |
-| `results/Fig8` | 3D visualization outputs |
-| `results/Table_1&2` | Cleaned manuscript Table 1 and Table 2 data only |
+| Folder                                | Content                                                         |
+| ------------------------------------- | --------------------------------------------------------------- |
+| `results/Fig7`                        | Experimental/simulated TIFF data and Fig. 7 comparison outputs  |
+| `results/Fig8`                        | 3D visualization outputs                                        |
+| `results/Table_1&2`                   | Cleaned manuscript Table 1 and Table 2 data only                |
 | `results/three_dim_model_package.mat` | Activity-Structure data package used for manuscript 3D modeling |
 
 `results/Table_1&2` now contains only:
 
-| File | Content |
-| --- | --- |
-| `Table1_validation_metrics.csv` | Manuscript Table 1 validation metrics |
-| `Table2_forward_ablation_metrics.csv` | Manuscript Table 2 M0-M3 ablation metrics |
-| `Table1_Table2.xlsx` | Workbook containing the two manuscript tables |
+| File                                  | Content                                       |
+| ------------------------------------- | --------------------------------------------- |
+| `Table1_validation_metrics.csv`       | Manuscript Table 1 validation metrics         |
+| `Table2_forward_ablation_metrics.csv` | Manuscript Table 2 M0-M3 ablation metrics     |
+| `Table1_Table2.xlsx`                  | Workbook containing the two manuscript tables |
 
 Verify the downloaded archive with:
 
@@ -126,7 +126,7 @@ Get-FileHash .\results.zip -Algorithm SHA256
 Expected SHA256:
 
 ```text
-C2C568FC76E8B752A0D69802E7F0817D2CB46351D98D750EC454F3C4C8E0CF0E
+59792C167E7B95E77ADC6D1154DDEA6146C7D103F42C11E7A06493290D3ABA95
 ```
 
 ## Citation
