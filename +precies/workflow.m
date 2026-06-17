@@ -20,18 +20,6 @@ switch lower(string(action))
         varargout{1} = buildTable2Ablation(varargin{:});
     case "writetable2files"
         varargout{1} = writeTable2Files(varargin{:});
-    case "loadactivitypackage"
-        varargout{1} = loadActivityPackage(varargin{:});
-    case "buildlegacyvolume"
-        varargout{1} = buildLegacyVolume(varargin{:});
-    case "buildactivitystructurevolume"
-        varargout{1} = buildActivityStructureVolume(varargin{:});
-    case "showlegacysliceviewer"
-        showLegacySliceViewer(varargin{:});
-    case "showactivitystructurevolume"
-        showActivityStructureVolume(varargin{:});
-    case "resolvecolormap"
-        varargout{1} = resolveColormap(varargin{:});
     otherwise
         error('precies:workflow:InvalidAction', 'Unsupported workflow action: %s', action);
 end

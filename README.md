@@ -96,19 +96,23 @@ Run:
 run_3d_modeling
 ```
 
-Select either `output/activity_structure_package.mat` after running reconstruction or `results/three_dim_model_package.mat`.
+The script reads `results/three_dim_model_package.mat` by default and builds the model directly from its point cloud, layer table, and V-pit geometry.
 
-This opens two separate figures:
+It produces:
 
-| Figure | Method | Controls |
+| Output | Content |
 | --- | --- | --- |
-| Legacy Grid Slice Model | Legacy Grid 2D slice reconstruction | Color map, slice position, and X/Y/Z slice direction |
-| Activity-Structure 3D Model | Activity-Structure constrained 3D volume | Color map and alpha |
+| `3d_modeling_block.png` | Semi-transparent six-face voxel block with the V-pit |
+| `3d_modeling_cross_section.png` | V-pit center cross section |
+| `3d_modeling_volume.mat` | Voxel volume, masks, geometry, grids, and rendering options |
 
-You can also pass the MAT file directly:
+The default output folder is `output/3d_modeling`. Options can be passed with a struct:
 
 ```matlab
-run_3d_modeling(fullfile('output', 'activity_structure_package.mat'))
+run_3d_modeling(struct( ...
+    'matFile', fullfile('results', 'three_dim_model_package.mat'), ...
+    'externalAlpha', 0.62, ...
+    'vPitAlpha', 0.88))
 ```
 
 ## Static Paper Results
