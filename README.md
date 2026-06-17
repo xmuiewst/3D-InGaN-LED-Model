@@ -58,7 +58,7 @@ The workflow automatically:
 1. Finds `data/5KV-Example.tif`.
 2. Uses the full TIFF pixel grid as the ROI.
 3. Uses 5 kV electron energy.
-4. Simulates every selected pixel with the GUI-default parameters: 0.3 s integration time, 1000 rays, 100 pA beam current, 100 nm depth step, a 10-period InGaN Prestrained superlattice near 120 nm total thickness, 10 MQW wells, 8 nm barriers, and 5 nm wells.
+4. Simulates every selected pixel with the default reproduction parameters: 0.3 s integration time, 1000 rays, 100 pA beam current, 100 nm depth step, a 10-period InGaN Prestrained superlattice near 120 nm total thickness, 10 MQW wells, 8 nm barriers, and 5 nm wells.
 5. Prints simulation progress as completed pixels over total pixels.
 6. Saves simulated mapping TIFF files and the reconstruction metrics.
 7. Exports `output/activity_structure_package.mat`.
@@ -96,36 +96,16 @@ Run:
 run_3d_modeling
 ```
 
-The script reads `results/three_dim_model_package.mat` by default and builds the model directly from its point cloud, layer table, and V-pit geometry.
-
-It produces:
-
-| Output | Content |
-| --- | --- | --- |
-| `3d_modeling_block.png` | Semi-transparent six-face voxel block with the V-pit |
-| `3d_modeling_cross_section.png` | V-pit center cross section |
-| `3d_modeling_volume.mat` | Voxel volume, masks, geometry, grids, and rendering options |
-
-The default output folder is `output/3d_modeling`. Options can be passed with a struct:
-
-```matlab
-run_3d_modeling(struct( ...
-    'matFile', fullfile('results', 'three_dim_model_package.mat'), ...
-    'externalAlpha', 0.62, ...
-    'vPitAlpha', 0.88))
-```
-
 ## Static Paper Results
 
 The `results/` folder contains the static result data referenced in the manuscript.
 
-For GitHub distribution, this folder is provided as a Release asset named `results.zip`, because several static result files are too large for normal GitHub tracking. Download `results.zip` from the [v1.0.0 release](https://github.com/xmuiewst/3D-InGaN-LED-Model/releases/tag/v1.0.0), then extract it into the repository root so the following paths exist:
+For GitHub distribution, this folder is provided as a Release asset named `results.zip`, because several static result files are too large for normal GitHub tracking. Download `results.zip` from the [Initial open-source releases](https://github.com/xmuiewst/3D-InGaN-LED-Model/releases/tag/v1.0.0), then extract it into the repository root so the following paths exist:
 
 | Folder | Content |
 | --- | --- |
 | `results/Fig7` | Experimental/simulated TIFF data and Fig. 7 comparison outputs |
-| `results/Fig8` | Depth-resolved mapping panels |
-| `results/Fig9` | 3D visualization outputs |
+| `results/Fig8` | 3D visualization outputs |
 | `results/Table_1&2` | Cleaned manuscript Table 1 and Table 2 data only |
 | `results/three_dim_model_package.mat` | Activity-Structure data package used for manuscript 3D modeling |
 
