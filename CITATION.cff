@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use this code or the accompanying data, please cite this software and the associated publication."
+
+title: "Model-Constrained 3D Cathodoluminescence Reconstruction of InGaN LEDs"
+
+type: software
+version: 1.0.1
+
+authors:
+  - family-names: Wang
+    given-names: Sentong
+    affiliation: Xiamen University
+
+  - family-names: Zhu
+    given-names: Lihong
+    affiliation: Xiamen University
+
+  - family-names: Li
+    given-names: Peixin
+    affiliation: Xiamen University
+
+  - family-names: Chen
+    given-names: Guolong
+    affiliation: Xiamen University
+
+  - family-names: Wu
+    given-names: Tingzhu
+    affiliation: Xiamen University
+
+  - family-names: Chen
+    given-names: Zhong
+    affiliation: Xiamen University
+
+  - family-names: Lu
+    given-names: Yijun
+    affiliation: Xiamen University
+
+repository-code: "https://github.com/xmuiewst/3D-InGaN-LED-Model"
+
+keywords:
+  - cathodoluminescence
+  - InGaN
+  - LED
+  - three-dimensional reconstruction
+  - Monte Carlo simulation
+  - electron-photon transport
+  - depth-resolved cathodoluminescence
+
+license: MIT
