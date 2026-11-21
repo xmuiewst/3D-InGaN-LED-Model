@@ -131,11 +131,23 @@ Expected SHA256:
 
 ## Citation
 
-If you use this code or the accompanying data, please cite:
+If you use this code or the accompanying data, please cite the paper and the archived release separately.
 
-Model-Constrained Nanoscale 3D Cathodoluminescence Reconstruction of InGaN LEDs via Coupled Electron–Photon Transport.
+- **Paper.** S. Wang, L. Zhu, P. Li, G. Chen, T. Wu, Z. Chen, and Y. Lu, “Model-constrained nanoscale 3D cathodoluminescence reconstruction of InGaN LEDs via coupled electron–photon transport,” *Optics Express* 34(22), 41649–41664 (2026). [DOI](https://doi.org/10.1364/OE.614482)
+- **Code and representative data.** S. Wang, L. Zhu, P. Li, G. Chen, T. Wu, Z. Chen, and Y. Lu, *Model-Constrained 3D Cathodoluminescence Reconstruction of InGaN LEDs*, v1.0.1, Zenodo (2026). [DOI](https://doi.org/10.5281/zenodo.22910768)
 
-The formal journal citation, DOI, and BibTeX entry should be added here after publication.
+```bibtex
+@article{Wang2026InGaN,
+  author  = {Wang, Sentong and Zhu, Lihong and Li, Peixin and Chen, Guolong and Wu, Tingzhu and Chen, Zhong and Lu, Yijun},
+  title   = {Model-constrained nanoscale {3D} cathodoluminescence reconstruction of {InGaN} {LEDs} via coupled electron--photon transport},
+  journal = {Optics Express},
+  year    = {2026},
+  volume  = {34},
+  number  = {22},
+  pages   = {41649--41664},
+  doi     = {10.1364/OE.614482}
+}
+```
 
 ## License
 
